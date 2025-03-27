@@ -18,17 +18,20 @@ let
   # All secrets that have rekeyFile set. These will be rekeyed.
   secretsToRekey = flip filterAttrs hostConfig.age.secrets (
     name: secret:
-    let
-      hint =
-        if secret.generator != null then
-          "Did you run `[32magenix generate[m` to generate it and have you added it to git?"
-        else
-          "Have you added it to git?";
-    in
-    assert assertMsg (
-      secret.rekeyFile != null -> builtins.pathExists secret.rekeyFile
-    ) "age.secrets.${name}.rekeyFile ([33m${toString secret.rekeyFile}[m) doesn't exist. ${hint}";
-    secret.rekeyFile != null
+    secret.enable
+    && (
+      let
+        hint =
+          if secret.generator != null then
+            "Did you run `[32magenix generate[m` to generate it and have you added it to git?"
+          else
+            "Have you added it to git?";
+      in
+      assert assertMsg (
+        secret.rekeyFile != null -> builtins.pathExists secret.rekeyFile
+      ) "age.secrets.${name}.rekeyFile ([33m${toString secret.rekeyFile}[m) doesn't exist. ${hint}";
+      secret.rekeyFile != null
+    )
   );
 
   # Returns a bash expression that refers to the path where a particular

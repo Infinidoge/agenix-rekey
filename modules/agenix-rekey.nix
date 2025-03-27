@@ -192,7 +192,7 @@ in
 {
   config = {
     assertions =
-      [
+      mkIf config.age.enable [
         {
           assertion = config.age.rekey.masterIdentities != [ ];
           message = "rekey.masterIdentities must be set.";
@@ -217,7 +217,7 @@ in
         )
       );
 
-    warnings =
+    warnings = mkIf config.age.enable (
       let
         hasGoodSuffix =
           x:
@@ -243,7 +243,8 @@ in
 
         This is intentional so you can initially deploy your system to read the actual pubkey.
         Once you have the pubkey, set rekey.hostPubkey to the content or a file containing the pubkey.
-      '';
+      ''
+    );
   };
 
   imports = [
@@ -388,10 +389,12 @@ in
             };
           };
           config = {
+            enable = mkIf submod.config.intermediary false;
             # Produce a rekeyed age secret
             file = mkIf (submod.config.rekeyFile != null) (
               if submod.config.intermediary then
-                # produce a dummy secret instead, unfortunately there is no way to omit it entirely in agenix as of Nov 2024.
+                # produce a dummy secret instead
+                # the secret is disabled on the module level, but just in case, substitute a dummy secret
                 dummySecret
               else if config.age.rekey.storageMode == "derivation" then
                 "${rekeyedSecrets}/${submod.config.name}.age"
